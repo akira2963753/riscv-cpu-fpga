@@ -1,0 +1,63 @@
+// TestCase10: 位元運算綜合測試
+// 測試 AND, OR, XOR, SLL, SRL, SRA
+
+// 初始化測試數值
+ADDI x1, x0, 0xFF    // x1 = 0x000000FF (255)
+ADDI x2, x0, 0xF0    // x2 = 0x000000F0 (240)
+
+// AND 運算 (0xFF & 0xF0 = 0xF0)
+AND x3, x1, x2       // x3 = 0xF0
+SW x3, 0(x0)
+
+// OR 運算 (0xFF | 0xF0 = 0xFF)
+OR x4, x1, x2        // x4 = 0xFF
+SW x4, 4(x0)
+
+// XOR 運算 (0xFF ^ 0xF0 = 0x0F)
+XOR x5, x1, x2       // x5 = 0x0F
+SW x5, 8(x0)
+
+// 左移測試 (0xFF << 4 = 0xFF0)
+SLLI x6, x1, 4       // x6 = 0xFF0
+SW x6, 12(x0)
+
+// 邏輯右移測試 (0xF0 >> 4 = 0x0F)
+SRLI x7, x2, 4       // x7 = 0x0F
+SW x7, 16(x0)
+
+// 算術右移測試 (負數右移)
+ADDI x8, x0, -16     // x8 = -16 (0xFFFFFFF0)
+SRAI x9, x8, 2       // x9 = -4 (0xFFFFFFFC)
+SW x9, 20(x0)
+
+// 測試 SLT (Set Less Than)
+ADDI x10, x0, 10
+ADDI x11, x0, 20
+SLT x12, x10, x11    // x12 = 1 (10 < 20)
+SW x12, 24(x0)
+
+// 測試 SLTU (Set Less Than Unsigned)
+ADDI x13, x0, -1     // x13 = 0xFFFFFFFF (unsigned: 4294967295)
+ADDI x14, x0, 1      // x14 = 1
+SLTU x15, x14, x13   // x15 = 1 (1 < 4294967295 unsigned)
+SW x15, 28(x0)
+
+// 預期結果：
+// x3  = 0x000000F0 (240)
+// x4  = 0x000000FF (255)
+// x5  = 0x0000000F (15)
+// x6  = 0x00000FF0 (4080)
+// x7  = 0x0000000F (15)
+// x9  = 0xFFFFFFFC (-4)
+// x12 = 0x00000001 (1)
+// x15 = 0x00000001 (1)
+
+// 資料記憶體：
+// [0-3]:   F0 00 00 00 (240)
+// [4-7]:   FF 00 00 00 (255)
+// [8-11]:  0F 00 00 00 (15)
+// [12-15]: F0 0F 00 00 (4080)
+// [16-19]: 0F 00 00 00 (15)
+// [20-23]: FC FF FF FF (-4)
+// [24-27]: 01 00 00 00 (1)
+// [28-31]: 01 00 00 00 (1)

@@ -1,0 +1,69 @@
+// TestCase3: 分支指令測試
+// 測試 BEQ, BNE, BLT, BGE, BLTU, BGEU
+
+// 初始化測試數據
+ADDI x1, x0, 10      // x1 = 10
+ADDI x2, x0, 10      // x2 = 10 (equal to x1)
+ADDI x3, x0, 20      // x3 = 20 (greater than x1)
+ADDI x4, x0, -5      // x4 = -5 (0xFFFFFFFB, signed less than x1, unsigned greater)
+
+// 測試 BEQ (Branch if Equal)
+BEQ x1, x2, beq_taken    // 應該跳轉（10 == 10）
+ADDI x5, x0, 999         // 不應該執行
+beq_taken:
+ADDI x5, x0, 1           // x5 = 1
+
+// 測試 BNE (Branch if Not Equal)
+BNE x1, x3, bne_taken    // 應該跳轉（10 != 20）
+ADDI x6, x0, 999         // 不應該執行
+bne_taken:
+ADDI x6, x0, 2           // x6 = 2
+
+// 測試 BLT (Branch if Less Than, signed)
+BLT x1, x3, blt_taken    // 應該跳轉（10 < 20）
+ADDI x7, x0, 999         // 不應該執行
+blt_taken:
+ADDI x7, x0, 3           // x7 = 3
+
+// 測試 BLT (negative number)
+BLT x4, x1, blt_neg      // 應該跳轉（-5 < 10）
+ADDI x8, x0, 999         // 不應該執行
+blt_neg:
+ADDI x8, x0, 4           // x8 = 4
+
+// 測試 BGE (Branch if Greater or Equal, signed)
+BGE x3, x1, bge_taken    // 應該跳轉（20 >= 10）
+ADDI x9, x0, 999         // 不應該執行
+bge_taken:
+ADDI x9, x0, 5           // x9 = 5
+
+// 測試 BLTU (Branch if Less Than Unsigned)
+BLTU x1, x3, bltu_taken  // 應該跳轉（10 < 20, unsigned）
+ADDI x10, x0, 999        // 不應該執行
+bltu_taken:
+ADDI x10, x0, 6          // x10 = 6
+
+// 測試 BLTU (negative as unsigned)
+BLTU x1, x4, bltu_skip   // 不應該跳轉（10 < 0xFFFFFFFB as unsigned）
+ADDI x11, x0, 7          // x11 = 7
+bltu_skip:
+
+// 測試 BGEU (Branch if Greater or Equal Unsigned)
+BGEU x4, x1, bgeu_taken  // 應該跳轉（0xFFFFFFFB >= 10 as unsigned）
+ADDI x12, x0, 999        // 不應該執行
+bgeu_taken:
+ADDI x12, x0, 8          // x12 = 8
+
+// 預期結果：
+// x1 = 10
+// x2 = 10
+// x3 = 20
+// x4 = -5 (0xfffffffb)
+// x5 = 1 (BEQ 正確跳轉)
+// x6 = 2 (BNE 正確跳轉)
+// x7 = 3 (BLT 正確跳轉)
+// x8 = 4 (BLT negative 正確跳轉)
+// x9 = 5 (BGE 正確跳轉)
+// x10 = 6 (BLTU 正確跳轉)
+// x11 = 7 (BLTU 正確不跳轉)
+// x12 = 8 (BGEU 正確跳轉)

@@ -1,0 +1,53 @@
+// Data Memory Initialization File (DM.dat)  
+// Format: 8-bit data in hexadecimal (Little Endian)
+// Each line represents one byte
+// Total size: 32 bytes (DATA_MEM_SIZE)
+
+// Initialize some test data for load instructions
+// Address 0-3: 32-bit value 0x12345678 (Little Endian)
+78
+56
+34
+12
+
+// Address 4-7: 32-bit value 0xABCDEF00 (Little Endian)
+00
+EF
+CD
+AB
+
+// Address 8-11: 32-bit value 0x11223344 (Little Endian)
+44
+33
+22
+11
+
+// Address 12-15: 32-bit value 0x55667788 (Little Endian)
+88
+77
+66
+55
+
+// Address 16-19: Reserved for store test (will be overwritten)
+00
+00
+00
+00
+
+// Address 20-23: Reserved for store test (will be overwritten)  
+00
+00
+00
+00
+
+// Address 24-27: 32-bit value 0xDEADBEEF (Little Endian)
+EF
+BE
+AD
+DE
+
+// Address 28-31: 32-bit value 0xCAFEBABE (Little Endian)
+BE
+BA
+FE
+CA

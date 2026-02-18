@@ -1,0 +1,54 @@
+// TestCase2: Load/Store 指令測試
+// 測試 SW, LW, SH, LH, SB, LB
+
+// 初始化基址暫存器（資料記憶體起始位址 = 0）
+ADDI x1, x0, 0       // x1 = 0 (base address)
+
+// 準備測試數據
+ADDI x2, x0, 0x12    // x2 = 0x12
+ADDI x3, x0, 0x34    // x3 = 0x34
+ADDI x4, x0, 0x56    // x4 = 0x56
+ADDI x5, x0, 0x78    // x5 = 0x78
+
+// 測試 SW (Store Word)
+LUI x6, 0x12345      // x6 = 0x12345000
+ADDI x6, x6, 0x678   // x6 = 0x12345678
+SW x6, 0(x1)         // mem[0-3] = 0x12345678 (小端序: 78 56 34 12)
+
+// 測試 LW (Load Word)
+LW x7, 0(x1)         // x7 = mem[0-3] = 0x12345678
+
+// 測試 SH (Store Halfword)
+ADDI x8, x0, 0xABCD  // x8 = 0xABCD
+SH x8, 4(x1)         // mem[4-5] = 0xABCD (小端序: CD AB)
+
+// 測試 LH (Load Halfword, signed)
+LH x9, 4(x1)         // x9 = mem[4-5] = 0xFFFFABCD (符號擴展)
+
+// 測試 LHU (Load Halfword Unsigned)
+LHU x10, 4(x1)       // x10 = mem[4-5] = 0x0000ABCD (零擴展)
+
+// 測試 SB (Store Byte)
+ADDI x11, x0, 0xEF   // x11 = 0xEF
+SB x11, 8(x1)        // mem[8] = 0xEF
+
+// 測試 LB (Load Byte, signed)
+LB x12, 8(x1)        // x12 = mem[8] = 0xFFFFFFEF (符號擴展)
+
+// 測試 LBU (Load Byte Unsigned)
+LBU x13, 8(x1)       // x13 = mem[8] = 0x000000EF (零擴展)
+
+// 預期結果：
+// x6 = 0x12345678
+// x7 = 0x12345678
+// x8 = 0x0000abcd
+// x9 = 0xffffabcd (符號擴展)
+// x10 = 0x0000abcd
+// x11 = 0x000000ef
+// x12 = 0xffffffef (符號擴展)
+// x13 = 0x000000ef
+
+// 資料記憶體：
+// [0-3]: 78 56 34 12
+// [4-5]: CD AB
+// [8]: EF
