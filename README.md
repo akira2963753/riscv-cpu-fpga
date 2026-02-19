@@ -29,6 +29,6 @@ Detailed architecture specification: [`RISC-V-SPEC.pdf`](./RISC-V-SPEC.pdf)
 
 ## Tools
 
-- Simulation: Icarus Verilog / ModelSim
+- Simulation: Xilinx Vivado
 - Synthesis & Implementation: Xilinx Vivado
 - Target: Xilinx FPGA
