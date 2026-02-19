@@ -21,7 +21,7 @@ This project originates from a Computer Organization course and [UC Berkeley CS 
 |---|---|
 | `Five-Stage-Pipelined-CPU/` | Core RTL modules (ALU, register file, control logic, etc.) |
 | `CACHE/` | L1 instruction / data cache with AXI4-Lite interface |
-| `RISC-V-Processor` | Top-level pipeline integration |
+| `RISC-V-Processor` | Top-level processor integration |
 
 ## Documentation
 
