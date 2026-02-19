@@ -2,7 +2,7 @@
 
 A 32-bit pipelined RISC-V processor supporting **RV32I** and **RV32M** instruction sets, implemented and verified on FPGA.
 
-This project originates from a Computer Organization course and [UC Berkeley CS 61C](https://cs61c.org/).
+This project originates from a [Computer Organization course](https://github.com/akira2963753/mips-5stage-cpu) and [UC Berkeley CS 61C](https://cs61c.org/).
 
 ---
 
@@ -12,7 +12,7 @@ This project originates from a Computer Organization course and [UC Berkeley CS 
 - Data forwarding and hazard detection
 - Flush detection for control hazards
 - Dynamic branch predictor
-- Instruction and data L1 cache
+- Instruction and data cache
 - AXI4-Lite bus interface to BRAM
 
 ## Repository Structure
