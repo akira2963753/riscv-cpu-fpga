@@ -2,7 +2,7 @@
 
 **A 32-bit pipelined RISC-V Processor supporting **RV32I** and **RV32M** ISA, fully implemented and verified on FPGA.**
 
-**This project originated from a [Computer Organization Course](https://github.com/akira2963753/5-Stage-Pipelined-MIPS-CPU) and [UC Berkeley CS 61C](https://cs61c.org/).**  
+**This project originated from a [`Computer Organization Course`](https://github.com/akira2963753/5-Stage-Pipelined-MIPS-CPU) and [`UC Berkeley CS 61C`](https://cs61c.org/).**  
 **For the complete architecture specification, see [`RISC-V-SPEC.pdf`](./RISC-V-SPEC.pdf).**
 
 ---
