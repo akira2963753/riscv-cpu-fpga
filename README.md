@@ -55,13 +55,13 @@ riscv-cpu-fpga/
 
 ### Run Simulation
 
-**1. Select a test case and convert assembly to machine code:**
+**1. Select a test case and convert assembly to machine code (can skip) :**
 
 ```bash
 python Instr_Transfer.py
 ```
 
-**2. Run automated verification (single test case or all):**
+**2. Run automated verification (single test case or all) :**
 
 ```bash
 python Verify_Script.py
