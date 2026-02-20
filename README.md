@@ -26,7 +26,7 @@ For the complete architecture specification, see [`RISC-V-SPEC.pdf`](./RISC-V-SP
 ## Architecture Overview
 
 ### RISC-V Processor (with Cache)
-<img width="1726" height="1486" alt="RISCV_ALL drawio (5)" src="https://github.com/user-attachments/assets/e1795da4-f3bf-4807-9f80-26bbf5fa83e0" />  
+<img width="1380" height="1188" alt="RISCV_ALL drawio (5)" src="https://github.com/user-attachments/assets/e1795da4-f3bf-4807-9f80-26bbf5fa83e0" />  
 
 ### Five-Stage Pipelined CPU Core (without Cache)
 <img width="11724" height="5418" alt="RISC-V Processor (2)" src="https://github.com/user-attachments/assets/a04ef9c4-f134-427f-9750-519a973e3b93" />  
