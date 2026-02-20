@@ -1,4 +1,4 @@
-# RISC-V PROCESSOR on FPGA
+# RISC-V Processor on FPGA
 
 A 32-bit pipelined RISC-V processor supporting **RV32I** and **RV32M** instruction sets, implemented and verified on FPGA.
 
