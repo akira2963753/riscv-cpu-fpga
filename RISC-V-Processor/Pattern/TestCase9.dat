@@ -1,0 +1,54 @@
+// TestCase9: 找最大值測試
+// 測試條件分支和比較指令
+
+// 初始化三個數值
+ADDI x1, x0, 42      // a = 42
+ADDI x2, x0, 17      // b = 17
+ADDI x3, x0, 99      // c = 99
+
+// 找出三個數中的最大值
+// max = a
+ADD x4, x0, x1       // max = a
+
+// if (b > max) max = b
+BLT x4, x2, update_b // if max < b, goto update_b
+JAL x0, check_c      // else skip to check_c
+update_b:
+ADD x4, x0, x2       // max = b
+
+// if (c > max) max = c
+check_c:
+BLT x4, x3, update_c // if max < c, goto update_c
+JAL x0, done         // else skip to done
+update_c:
+ADD x4, x0, x3       // max = c
+
+done:
+SW x4, 0(x0)         // mem[0] = max
+
+// 找最小值
+ADD x5, x0, x1       // min = a
+
+// if (b < min) min = b
+BLT x2, x5, update_min_b
+JAL x0, check_min_c
+update_min_b:
+ADD x5, x0, x2       // min = b
+
+// if (c < min) min = c
+check_min_c:
+BLT x3, x5, update_min_c
+JAL x0, finish
+update_min_c:
+ADD x5, x0, x3       // min = c
+
+finish:
+SW x5, 4(x0)         // mem[4] = min
+
+// 預期結果：
+// x4 = 99  (0x00000063) - max value
+// x5 = 17  (0x00000011) - min value
+
+// 資料記憶體：
+// [0-3]:  63 00 00 00 (99)
+// [4-7]:  11 00 00 00 (17)

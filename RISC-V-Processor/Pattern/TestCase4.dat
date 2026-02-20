@@ -1,0 +1,41 @@
+// TestCase4: 跳躍指令測試
+// 測試 JAL, JALR
+
+// 測試 JAL (Jump and Link)
+ADDI x1, x0, 0       // x1 = 0
+JAL x2, jal_target   // x2 = return address (PC+4)，跳轉到 jal_target
+ADDI x3, x0, 999     // 不應該執行
+ADDI x4, x0, 999     // 不應該執行
+
+jal_target:
+ADDI x3, x0, 1       // x3 = 1
+// x2 應該包含返回地址（大約 0x8）
+
+// 測試 JALR (Jump and Link Register)
+ADDI x5, x0, 0       // x5 = 0
+AUIPC x6, 0          // x6 = PC
+ADDI x6, x6, 20      // x6 = PC + 20 (jalr_target 位址)
+JALR x7, x6, 0       // x7 = return address，跳轉到 x6
+ADDI x8, x0, 999     // 不應該執行
+
+jalr_target:
+ADDI x8, x0, 2       // x8 = 2
+// x7 應該包含返回地址
+
+// 測試 JAL 的返回
+JAL x0, end          // x0 不保存返回地址（因為 x0 永遠為 0）
+ADDI x9, x0, 999     // 不應該執行
+
+end:
+ADDI x9, x0, 3       // x9 = 3
+
+// 預期結果：
+// x1 = 0
+// x2 = return address (非0)
+// x3 = 1 (JAL 正確跳轉)
+// x4 = 0 (未執行)
+// x5 = 0
+// x6 = jalr_target address (非0)
+// x7 = return address (非0)
+// x8 = 2 (JALR 正確跳轉)
+// x9 = 3 (JAL with x0 正確跳轉)

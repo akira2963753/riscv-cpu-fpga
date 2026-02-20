@@ -1,0 +1,38 @@
+// TestCase1: 基本算術指令測試
+// 測試 ADDI, ADD, SUB, AND, OR, XOR
+
+// 初始化測試數據
+ADDI x1, x0, 10      // x1 = 10
+ADDI x2, x0, 20      // x2 = 20
+ADDI x3, x0, 15      // x3 = 15
+ADDI x4, x0, -5      // x4 = -5 (0xFFFFFFFB)
+
+// 測試 ADD
+ADD x5, x1, x2       // x5 = 10 + 20 = 30
+ADD x6, x3, x4       // x6 = 15 + (-5) = 10
+
+// 測試 SUB
+SUB x7, x2, x1       // x7 = 20 - 10 = 10
+SUB x8, x1, x2       // x8 = 10 - 20 = -10 (0xFFFFFFF6)
+
+// 測試邏輯運算
+ADDI x9, x0, 0xFF    // x9 = 0xFF
+ADDI x10, x0, 0xF0   // x10 = 0xF0
+AND x11, x9, x10     // x11 = 0xFF & 0xF0 = 0xF0
+OR x12, x9, x10      // x12 = 0xFF | 0xF0 = 0xFF
+XOR x13, x9, x10     // x13 = 0xFF ^ 0xF0 = 0x0F
+
+// 預期結果：
+// x1 = 10 (0x0000000a)
+// x2 = 20 (0x00000014)
+// x3 = 15 (0x0000000f)
+// x4 = -5 (0xfffffffb)
+// x5 = 30 (0x0000001e)
+// x6 = 10 (0x0000000a)
+// x7 = 10 (0x0000000a)
+// x8 = -10 (0xfffffff6)
+// x9 = 255 (0x000000ff)
+// x10 = 240 (0x000000f0)
+// x11 = 240 (0x000000f0)
+// x12 = 255 (0x000000ff)
+// x13 = 15 (0x0000000f)
