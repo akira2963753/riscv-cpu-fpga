@@ -125,7 +125,10 @@
 
     `define DATA_W 32
     `define ADDR_W 32
+    `define AXI_ID_W 4
     `define BRAM_DEPTH 1024
     `define BRAM_ADDR_W $clog2(`BRAM_DEPTH)
+    `define DATA_BRAM_DEPTH (`DATA_MEM_SIZE/4)
+    `define DATA_BRAM_ADDR_W $clog2(`DATA_BRAM_DEPTH)
 
 `endif // SYSTEM_DEF_VH

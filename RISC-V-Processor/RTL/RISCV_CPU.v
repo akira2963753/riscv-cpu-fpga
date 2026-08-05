@@ -27,30 +27,64 @@ module RISCV_CPU(
     input ACLK,
     input ARESETn,
 
-    // I-Cache Interface
+    // I-Cache AXI4 Interface
+    output [`AXI_ID_W-1:0] I_AR_ID,
+    output [`ADDR_W-1:0] I_AR_ADDR,
+    output [7:0] I_AR_LEN,
+    output [2:0] I_AR_SIZE,
+    output [1:0] I_AR_BURST,
+    output I_AR_LOCK,
+    output [3:0] I_AR_CACHE,
+    output [2:0] I_AR_PROT,
+    output [3:0] I_AR_QOS,
     output I_AR_VALID,
-    output [`PC_WIDTH-1:0] I_AR_ADDR,
     input I_AR_READY,
-    output I_R_READY,
-    input I_R_VALID,
+    input [`AXI_ID_W-1:0] I_R_ID,
     input [`DATA_WIDTH-1:0] I_R_DATA,
+    input [1:0] I_R_RESP,
+    input I_R_LAST,
+    input I_R_VALID,
+    output I_R_READY,
 
-    // D-Cache Interface
-    output D_AR_VALID,
-    output D_R_READY,
-    output [`ADDR_W-1:0] D_AR_ADDR,
-    input D_AR_READY,
-    input D_R_VALID,
-    input [`DATA_W-1:0] D_R_DATA,
-    output D_AW_VALID,
+    // D-Cache AXI4 Interface
+    output [`AXI_ID_W-1:0] D_AW_ID,
     output [`ADDR_W-1:0] D_AW_ADDR,
-    output D_W_VALID,
+    output [7:0] D_AW_LEN,
+    output [2:0] D_AW_SIZE,
+    output [1:0] D_AW_BURST,
+    output D_AW_LOCK,
+    output [3:0] D_AW_CACHE,
+    output [2:0] D_AW_PROT,
+    output [3:0] D_AW_QOS,
+    output D_AW_VALID,
+    input D_AW_READY,
     output [`DATA_W-1:0] D_W_DATA,
     output [`DATA_W/8-1:0] D_W_STRB,
-    output D_B_READY,
-    input D_AW_READY,
+    output D_W_LAST,
+    output D_W_VALID,
     input D_W_READY,
-    input D_B_VALID);
+    input [`AXI_ID_W-1:0] D_B_ID,
+    input [1:0] D_B_RESP,
+    input D_B_VALID,
+    output D_B_READY,
+    output [`AXI_ID_W-1:0] D_AR_ID,
+    output [`ADDR_W-1:0] D_AR_ADDR,
+    output [7:0] D_AR_LEN,
+    output [2:0] D_AR_SIZE,
+    output [1:0] D_AR_BURST,
+    output D_AR_LOCK,
+    output [3:0] D_AR_CACHE,
+    output [2:0] D_AR_PROT,
+    output [3:0] D_AR_QOS,
+    output D_AR_VALID,
+    input D_AR_READY,
+    input [`AXI_ID_W-1:0] D_R_ID,
+    input [`DATA_W-1:0] D_R_DATA,
+    input [1:0] D_R_RESP,
+    input D_R_LAST,
+    input D_R_VALID,
+    output D_R_READY,
+    output [`PC_WIDTH - 1:0]  PC_OUT);
 
     wire    [`PC_WIDTH - 1:0]       IF_PC;
     wire    [`PC_WIDTH - 1:0]       PC_Plus_4;
@@ -71,7 +105,7 @@ module RISCV_CPU(
     wire    [2:0]   Imm_Type;
     wire    [1:0]   ID_ALU_op,EX_ALU_op;
     wire    [1:0]   ID_WB_sel,EX_WB_sel,MEM_WB_sel,WB_WB_sel;
-    wire    ID_Reg_w,EX_Reg_w,WB_Reg_w;
+    wire    ID_Reg_w,EX_Reg_w,MEM_Reg_w,WB_Reg_w;
     wire    ID_ALU_src1,EX_ALU_src1;
     wire    ID_ALU_src2,EX_ALU_src2;
     wire    ID_Mem_w,EX_Mem_w,MEM_Mem_w;
@@ -104,17 +138,85 @@ module RISCV_CPU(
     wire    [`PC_WIDTH - 1:0] BTB_PC;
     wire    BTB_Valid;
     wire    Predict_Taken,ID_Predict_Taken,EX_Predict_Taken;
+    wire    I_CPU_REQ_VALID_RAW;
     wire    I_CPU_REQ_VALID;
+    wire    [`INSTR_WIDTH - 1:0] I_CPU_REQ_DATA_RAW;
 
     // D-Cache stall control
     wire    D_Cache_BUSY;
+    wire    D_CPU_REQ_VALID_RAW;
     wire    D_CPU_REQ_VALID;
+    wire    [`DATA_W-1:0] D_CPU_REQ_DATA_RAW;
     wire    [`DATA_W-1:0] D_CPU_REQ_DATA;
-    wire    D_Write_Done   = D_B_VALID && D_B_READY;
-    wire    D_Cache_Stall  = (MEM_Mem_r && !D_CPU_REQ_VALID) ||
-                             (MEM_Mem_w && !D_Write_Done);
+    wire    D_Write_Done_RAW = D_B_VALID && D_B_READY;
+    wire    D_Write_Done;
     wire    Pipeline_Stall;
 
+    reg     I_Response_Pending;
+    reg     D_Read_Response_Pending;
+    reg     D_Write_Response_Pending;
+    reg     [`INSTR_WIDTH - 1:0] I_Response_Data;
+    reg     [`DATA_W - 1:0] D_Read_Response_Data;
+
+    wire    I_Response_Available = I_Response_Pending || I_CPU_REQ_VALID_RAW;
+    wire    D_Read_Response_Available = D_Read_Response_Pending || D_CPU_REQ_VALID_RAW;
+    wire    D_Write_Response_Available = D_Write_Response_Pending || D_Write_Done_RAW;
+
+    /*
+     * Both caches return a one-cycle response pulse.  The pipeline, however,
+     * must advance atomically: an instruction fetch and the current data-side
+     * transaction (when present) have to be available in the same cycle.
+     * These pending registers form one-entry response buffers so that an
+     * earlier cache response is not lost while waiting for the other cache.
+     */
+    wire    D_Cache_Stall = !I_Response_Available ||
+                            (MEM_Mem_r && !D_Read_Response_Available) ||
+                            (MEM_Mem_w && !D_Write_Response_Available);
+    wire    Pipeline_Accept = !D_Cache_Stall;
+    wire    I_Response_Accept = Pipeline_Accept && IF_ID_w;
+    wire    D_Read_Response_Accept = Pipeline_Accept && MEM_Mem_r;
+    wire    D_Write_Response_Accept = Pipeline_Accept && MEM_Mem_w;
+
+    assign I_CPU_REQ_VALID = I_Response_Available;
+    assign IF_Instr = I_Response_Pending ? I_Response_Data : I_CPU_REQ_DATA_RAW;
+    assign D_CPU_REQ_VALID = D_Read_Response_Available;
+    assign D_CPU_REQ_DATA = D_Read_Response_Pending ?
+                            D_Read_Response_Data : D_CPU_REQ_DATA_RAW;
+    assign D_Write_Done = D_Write_Response_Available;
+
+    always @(posedge ACLK or negedge ARESETn) begin
+        if(!ARESETn) begin
+            I_Response_Pending       <= 1'b0;
+            D_Read_Response_Pending  <= 1'b0;
+            D_Write_Response_Pending <= 1'b0;
+            I_Response_Data          <= {`INSTR_WIDTH{1'b0}};
+            D_Read_Response_Data     <= {`DATA_W{1'b0}};
+        end
+        else begin
+            if(I_CPU_REQ_VALID_RAW)
+                I_Response_Data <= I_CPU_REQ_DATA_RAW;
+
+            if(D_CPU_REQ_VALID_RAW)
+                D_Read_Response_Data <= D_CPU_REQ_DATA_RAW;
+
+            if(I_Response_Accept)
+                I_Response_Pending <= 1'b0;
+            else if(I_CPU_REQ_VALID_RAW)
+                I_Response_Pending <= 1'b1;
+
+            if(D_Read_Response_Accept)
+                D_Read_Response_Pending <= 1'b0;
+            else if(D_CPU_REQ_VALID_RAW)
+                D_Read_Response_Pending <= 1'b1;
+
+            if(D_Write_Response_Accept)
+                D_Write_Response_Pending <= 1'b0;
+            else if(D_Write_Done_RAW)
+                D_Write_Response_Pending <= 1'b1;
+        end
+    end
+
+    assign PC_OUT = IF_PC;
     assign Predict_Taken = Predict && BTB_Valid;
 
     // Instruction Decode
@@ -161,8 +263,7 @@ module RISCV_CPU(
         else I_CPU_REQ_VALID_REG <= I_CPU_REQ_VALID;
     end
 
-    // assign ID_EX_Flush = ID_EX_Flush_1 || ID_EX_Flush_0;
-    assign ID_EX_Flush = ID_EX_Flush_1 || ID_EX_Flush_0 || ((!I_CPU_REQ_VALID_REG && !Pipeline_Stall) && (ID_Rs1_Addr==ID_Rd_Addr));
+    assign ID_EX_Flush = ID_EX_Flush_1 || ID_EX_Flush_0;
 
     // D-Cache read data → LDU
     assign Mem_R_Data = D_CPU_REQ_DATA;
@@ -203,20 +304,39 @@ module RISCV_CPU(
 
     wire I_Cache_Busy;
 
-    I_Cache Instruction_Cache (
+    I_Cache #(
+        .DATA_W(`DATA_W),
+        .ADDR_W(`ADDR_W),
+        .ID_W(`AXI_ID_W),
+        .WAY(`WAY),
+        .SET(`SET_NUM),
+        .BLOCK_WORD_SIZE(`BLOCK_WORD_SIZE)
+    ) Instruction_Cache (
         .ACLK(ACLK),
         .ARESETn(ARESETn),
-        .CPU_REQ(1'b1),
+        .CPU_REQ(!I_Response_Pending),
         .CPU_REQ_ADDR(IF_PC),
-        .CPU_REQ_VALID(I_CPU_REQ_VALID),
-        .CPU_REQ_DATA(IF_Instr),
+        .CPU_REQ_VALID(I_CPU_REQ_VALID_RAW),
+        .CPU_REQ_DATA(I_CPU_REQ_DATA_RAW),
         .BUSY(I_Cache_Busy),
-        .AR_VALID(I_AR_VALID),
-        .R_READY(I_R_READY),
+        .AR_ID(I_AR_ID),
         .AR_ADDR(I_AR_ADDR),
+        .AR_LEN(I_AR_LEN),
+        .AR_SIZE(I_AR_SIZE),
+        .AR_BURST(I_AR_BURST),
+        .AR_LOCK(I_AR_LOCK),
+        .AR_CACHE(I_AR_CACHE),
+        .AR_PROT(I_AR_PROT),
+        .AR_QOS(I_AR_QOS),
+        .AR_VALID(I_AR_VALID),
         .AR_READY(I_AR_READY),
+        .R_ID(I_R_ID),
+        .R_DATA(I_R_DATA),
+        .R_RESP(I_R_RESP),
+        .R_LAST(I_R_LAST),
         .R_VALID(I_R_VALID),
-        .R_DATA(I_R_DATA));
+        .R_READY(I_R_READY)
+    );
 
     //  || (I_CPU_REQ_VALID_REG && IF_ID_Flush)
     IF_ID IF_ID_inst (
@@ -394,36 +514,66 @@ module RISCV_CPU(
         .MEM_Mem_W_Strb(MEM_Mem_W_Strb),
         .MEM_Funct3(MEM_Funct3));
 
-    D_Cache Data_Cache(
+    D_Cache #(
+        .DATA_W(`DATA_W),
+        .ADDR_W(`ADDR_W),
+        .ID_W(`AXI_ID_W),
+        .WAY(`WAY),
+        .SET(`SET_NUM),
+        .BLOCK_WORD_SIZE(`BLOCK_WORD_SIZE)
+    ) Data_Cache (
         .ACLK(ACLK),
         .ARESETn(ARESETn),
         // CPU Read Interface
-        .CPU_REQ(MEM_Mem_r),
+        .CPU_REQ(MEM_Mem_r && !D_Read_Response_Pending),
         .CPU_REQ_ADDR(MEM_ALU_Result),
-        .CPU_REQ_VALID(D_CPU_REQ_VALID),
-        .CPU_REQ_DATA(D_CPU_REQ_DATA),
+        .CPU_REQ_VALID(D_CPU_REQ_VALID_RAW),
+        .CPU_REQ_DATA(D_CPU_REQ_DATA_RAW),
         // CPU Write Interface
-        .CPU_WR_EN(MEM_Mem_w),
+        .CPU_WR_EN(MEM_Mem_w && !D_Write_Response_Pending),
         .CPU_WR_DATA(MEM_Mem_W_Data),
         .CPU_WR_STRB(MEM_Mem_W_Strb),
         .BUSY(D_Cache_BUSY),
-        // AXI Read Channel
-        .AR_VALID(D_AR_VALID),
-        .R_READY(D_R_READY),
-        .AR_ADDR(D_AR_ADDR),
-        .AR_READY(D_AR_READY),
-        .R_VALID(D_R_VALID),
-        .R_DATA(D_R_DATA),
         // AXI Write Channel
-        .AW_VALID(D_AW_VALID),
+        .AW_ID(D_AW_ID),
         .AW_ADDR(D_AW_ADDR),
-        .W_VALID(D_W_VALID),
+        .AW_LEN(D_AW_LEN),
+        .AW_SIZE(D_AW_SIZE),
+        .AW_BURST(D_AW_BURST),
+        .AW_LOCK(D_AW_LOCK),
+        .AW_CACHE(D_AW_CACHE),
+        .AW_PROT(D_AW_PROT),
+        .AW_QOS(D_AW_QOS),
+        .AW_VALID(D_AW_VALID),
+        .AW_READY(D_AW_READY),
         .W_DATA(D_W_DATA),
         .W_STRB(D_W_STRB),
-        .B_READY(D_B_READY),
-        .AW_READY(D_AW_READY),
+        .W_LAST(D_W_LAST),
+        .W_VALID(D_W_VALID),
         .W_READY(D_W_READY),
-        .B_VALID(D_B_VALID));
+        .B_ID(D_B_ID),
+        .B_RESP(D_B_RESP),
+        .B_VALID(D_B_VALID),
+        .B_READY(D_B_READY),
+        // AXI Read Channel
+        .AR_ID(D_AR_ID),
+        .AR_ADDR(D_AR_ADDR),
+        .AR_LEN(D_AR_LEN),
+        .AR_SIZE(D_AR_SIZE),
+        .AR_BURST(D_AR_BURST),
+        .AR_LOCK(D_AR_LOCK),
+        .AR_CACHE(D_AR_CACHE),
+        .AR_PROT(D_AR_PROT),
+        .AR_QOS(D_AR_QOS),
+        .AR_VALID(D_AR_VALID),
+        .AR_READY(D_AR_READY),
+        .R_ID(D_R_ID),
+        .R_DATA(D_R_DATA),
+        .R_RESP(D_R_RESP),
+        .R_LAST(D_R_LAST),
+        .R_VALID(D_R_VALID),
+        .R_READY(D_R_READY)
+    );
 
     LDU Load_Data_Unit(
         .MEM_Funct3(MEM_Funct3),

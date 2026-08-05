@@ -19,6 +19,7 @@ module ALU_Control(
                 endcase
             end
             `ALU_OP_BRANCH : begin
+                Mem_W_Strb = 4'b0000; // No write
                 case(Funct3)
                     3'b000: ALU_Ctrl_op = `ALU_CTRL_SUB;  
                     3'b001: ALU_Ctrl_op = `ALU_CTRL_SUB;   
@@ -30,6 +31,7 @@ module ALU_Control(
                 endcase
             end
             `ALU_OP_R_TYPE : begin
+                Mem_W_Strb = 4'b0000; // No write
                 case({Funct7,Funct3})
                     {7'b0000000,3'b000}: ALU_Ctrl_op = `ALU_CTRL_ADD;
                     {7'b0100000,3'b000}: ALU_Ctrl_op = `ALU_CTRL_SUB;  
@@ -54,6 +56,7 @@ module ALU_Control(
                 endcase
             end
             `ALU_OP_I_TYPE : begin
+                Mem_W_Strb = 4'b0000; // No write
                 case (Funct3)
                     3'b000: ALU_Ctrl_op = `ALU_CTRL_ADD;     
                     3'b010: ALU_Ctrl_op = `ALU_CTRL_SLT;    
@@ -65,6 +68,10 @@ module ALU_Control(
                     3'b101: ALU_Ctrl_op = (Funct7 == 7'b0000000)? `ALU_CTRL_SRL : `ALU_CTRL_SRA; 
                     default: ALU_Ctrl_op = `ALU_CTRL_ADD;
                 endcase                
+            end
+            default : begin
+                ALU_Ctrl_op = `ALU_CTRL_ADD;
+                Mem_W_Strb = 4'b0000; // No write
             end
         endcase
     end

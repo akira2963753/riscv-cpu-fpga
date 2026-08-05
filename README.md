@@ -1,126 +1,147 @@
-# 32-bit RISC-V Processor on FPGA
+# Pipelined RV32 SoC
 
-**A 32-bit Five-Stage Pipelined RISC-V Processor supporting **RV32I** and **RV32M** ISA with AXI-4 Lite Bus to BRAM.**
+A synthesizable 32-bit RISC-V processor with a five-stage pipeline, dynamic
+branch prediction, private L1 instruction/data caches, and independent AXI4
+memory buses.
 
-**This project originated from a [`Computer Organization Course`](https://github.com/akira2963753/5-Stage-Pipelined-MIPS-CPU) and [`UC Berkeley CS 61C`](https://cs61c.org/)**  
-**For the complete architecture specification, see [`RISC-V-SPEC.pdf`](./RISC-V-SPEC.pdf)**
+This repository contains the CPU core, standalone cache and AXI4 verification
+environments, the integrated processor, architecture documents, and an
+automated Vivado regression flow.
 
----
+## Current status
 
-## Features
+- ISA: RV32I and RV32M
+- Pipeline: IF, ID, EX, MEM, WB
+- Hazard handling: forwarding, load-use stall, pipeline flush
+- Branch prediction: BHT with 2-bit counters and a BTB
+- L1 caches: two-way set associative, 64 sets, eight 32-bit words per line
+- D-Cache policy: write-through, no-write-allocate
+- Memory interface: full AXI4 with 4-bit transaction IDs
+- Cache refill: eight-beat incrementing AXI4 bursts
+- Verification: all 12 processor regression cases pass
+- Synthesis: Vivado 2025.1, zero errors and zero critical warnings
 
-| Category | Details |
+## Architecture
+
+```text
+                              +----------------------+
+                              |  Five-stage RV32 CPU |
+                              +----------+-----------+
+                                         |
+                          +--------------+--------------+
+                          |                             |
+                    instruction                     load/store
+                          |                             |
+                    +-----v-----+                 +-----v-----+
+                    |  I-Cache  |                 |  D-Cache  |
+                    +-----+-----+                 +-----+-----+
+                          | AXI4 read                   | AXI4 read/write
+                    +-----v-----+                 +-----v-----+
+                    | I AXI4 Bus|                 | D AXI4 Bus|
+                    +-----+-----+                 +-----+-----+
+                          |                             |
+                    +-----v-----+                 +-----v-----+
+                    | I-BRAM    |                 | D-BRAM    |
+                    +-----------+                 +-----------+
+```
+
+The instruction and data paths use independent AXI4 managers. One-entry
+response buffers at the CPU/cache boundary preserve a response until the
+pipeline can accept the instruction-side and data-side results atomically.
+This prevents response loss and forward-progress problems during simultaneous
+cache activity.
+
+Architecture diagrams and design notes are available in [`SPEC/`](SPEC/).
+
+![Processor architecture](SPEC/RISC-V%20Processor.png)
+
+## Repository layout
+
+```text
+.
+|-- CACHE/
+|   |-- AXI4/                    # AXI4 bus, testbench, pattern, and SVA checker
+|   |-- I-CACHE/                 # Instruction cache RTL and standalone tests
+|   `-- D-CACHE/                 # Data cache RTL and standalone tests
+|-- Five-Stage-Pipelined-CPU/    # CPU core without the cache/AXI4 integration
+|-- RISC-V-Processor/            # Integrated processor and regression flow
+|   |-- RTL/
+|   |-- Pattern/                 # Existing assembly-style test cases
+|   `-- Testbench/               # Golden model and generated memory images
+|-- SPEC/                        # Architecture documents and diagrams
+|-- LICENSE
+`-- README.md
+```
+
+## Supported instructions
+
+| Group | Instructions |
 |---|---|
-| ISA | RV32I + RV32M (Base Integer + Multiply/Divide) |
-| Pipeline | 5-stage: IF / ID / EX / MEM / WB |
-| Hazard Handling | Data forwarding, load-use hazard stall, control hazard flush |
-| Branch Prediction | Dynamic predictor with BHT (2-bit saturating counter) + BTB |
-| Memory Hierarchy | 2-way set-associative I-Cache and D-Cache |
-| Bus Interface | AXI4-Lite to BRAM (Instruction: BROM, Data: BRAM) |
-| CSR | `mstatus`, `mtvec`, `mepc`, `mcause`, `rdcycle` |
-| Target FPGA | Xilinx ZCU104 |
-| EDA Tool | Vivado 2025.1 |
-
----
-
-## Architecture Overview
-
-### RISC-V Processor (with Cache)
-<img width="480" height="400" alt="RISCV_ALL drawio (5)" src="https://github.com/user-attachments/assets/e1795da4-f3bf-4807-9f80-26bbf5fa83e0" />  
-
-### Five-Stage Pipelined CPU Core (without Cache)
-<img width="11724" height="5418" alt="RISC-V Processor (2)" src="https://github.com/user-attachments/assets/a04ef9c4-f134-427f-9750-519a973e3b93" />  
-
----
-
-## Repository Structure
-
-```
-riscv-cpu-fpga/
-├── Five-Stage-Pipelined-CPU/   # Core RTL: ALU, Register File, BPU, BHT, BTB, CSR, etc.
-├── CACHE/                      # I-Cache and D-Cache with AXI4-Lite interface
-├── RISC-V CPU CORE/            # Top-level processor integration
-├── RISC-V-SPEC.pdf             # Full architecture specification
-└── README.md
-```
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Xilinx Vivado 2025.1
-- Python 3.x
-
-### Run Simulation
-
-**1. Select a test case and convert assembly to machine code (can skip) :**
-
-```bash
-python Instr_Transfer.py
-```
-
-**2. Run automated verification (single test case or all) :**
-
-```bash
-python Verify_Script.py
-```
-
-The script invokes Vivado simulation via TCL commands, compares the RTL output (`RF.out`, `DM.out`) against the Python golden model (`Golden_Result.py`), and reports pass/fail for each test case.
-
----
+| Integer register | `ADD SUB SLL SLT SLTU XOR SRL SRA OR AND` |
+| Integer immediate | `ADDI SLTI SLTIU XORI ORI ANDI SLLI SRLI SRAI` |
+| Multiply/divide | `MUL MULH MULHSU MULHU DIV DIVU REM REMU` |
+| Load | `LB LH LW LBU LHU` |
+| Store | `SB SH SW` |
+| Branch | `BEQ BNE BLT BGE BLTU BGEU` |
+| Jump | `JAL JALR` |
+| Upper immediate | `LUI AUIPC` |
+| CSR | `CSRRW CSRRS CSRRC` |
 
 ## Verification
 
-Verification uses a custom Python behavioral model (`Golden_Result.py`) instead of the Spike ISA simulator, enabling faster iteration. The entire flow is fully automated via `Verify_Script.py`.
+### Requirements
 
-```
-Assembly (.s)
-    │
-    ▼
-Instr_Transfer.py ──► IM.dat ──► .coe (for BROM IP)
-                                        │
-                                        ▼
-                              Vivado RTL Simulation
-                              (driven by Script.tcl)
-                                        │
-                              RF.out + DM.out (RTL output)
-                                        │
-                                        ▼
-                           Golden_Result.py (Python behavioral model)
-                                        │
-                           Verify_Script.py auto-compares ──► PASS / FAIL
-```
+- Windows
+- Python 3
+- Xilinx Vivado 2025.1
 
-Users can choose to run a single test case or all test cases at once:
+The checked-in Vivado batch flow currently uses the local Windows installation
+at `C:\Xilinx\2025.1\Vivado`. If the repository is cloned elsewhere, update the
+absolute processor paths in `RISC-V-Processor/Script.tcl`,
+`RISC-V-Processor/RTL/I_BRAM.sv`, and
+`RISC-V-Processor/RTL/RISCV_PROCESSOR_tb.v`.
 
-```bash
+### Run the processor regression
+
+```powershell
+cd RISC-V-Processor
 python Verify_Script.py
 ```
 
-12 test cases cover all RV32I and RV32M instructions, including arithmetic/logic, memory access (byte/half/word), branches, jumps, multiply/divide, and boundary conditions. **All 12 test cases pass.**
+Select one test case or enter `all` to execute the complete 12-case regression.
+For every case, the script:
 
----
+1. Converts the assembly-style pattern into instruction bytes.
+2. Generates Vivado `.coe` and synthesizable 32-bit `.mem` images.
+3. Runs the Python golden model.
+4. Creates a fresh Vivado behavioral simulation snapshot.
+5. Compares all 32 GPR values and 32 bytes of data memory.
+6. Fails the run if either AXI4 SVA checker reports a protocol violation.
 
-## Supported Instructions
+The final integrated version passes all 12 existing cases without modifying
+their test programs.
 
-**R-Type:** `ADD SUB SLL SLT SLTU XOR SRL SRA OR AND`  
-**RV32M:** `MUL MULH MULHSU MULHU DIV DIVU REM REMU`  
-**I-Type:** `ADDI SLTI SLTIU XORI ORI ANDI SLLI SRLI SRAI JALR`  
-**Load:** `LB LH LW LBU LHU`  
-**Store:** `SB SH SW`  
-**Branch:** `BEQ BNE BLT BGE BLTU BGEU`  
-**Upper Immediate:** `LUI AUIPC`  
-**Jump:** `JAL`  
-**CSR:** `CSRRW CSRRS CSRRC`
+### AXI4 protocol checking
 
----
+[`CACHE/AXI4/CHECKER.sv`](CACHE/AXI4/CHECKER.sv) contains SystemVerilog
+Assertions for the AXI4 channels, including payload stability under backpressure,
+burst attributes, response ordering, IDs, `RLAST`/`WLAST`, and reset behavior.
+The processor testbench instantiates one checker for the instruction bus and
+one for the data bus.
 
-## Future Work
+## Synthesis result
 
-- Upgrade D-Cache from write-through to write-back with a write buffer
-- Add interrupt and exception handling
-- Expand CSR support for full Machine-mode privilege
+The integrated `RISCV_PROCESSOR` top was synthesized for
+`xc7z010clg400-1` with Vivado 2025.1:
 
----
+- 0 synthesis errors
+- 0 critical warnings
+- instruction `.mem` initialization successfully read by synthesis
+
+The current constraint requests a 250 MHz clock. Passing synthesis does not by
+itself guarantee post-place-and-route timing closure; implementation and timing
+sign-off remain separate steps.
+
+## License
+
+This project is released under the [MIT License](LICENSE).

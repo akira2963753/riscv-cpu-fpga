@@ -1,4 +1,5 @@
 `include "SYSTEM_DEF.vh"
+
 module ImmGen(
     input [`INSTR_WIDTH - 1:0] Instr,
     input [2:0] Imm_Type,

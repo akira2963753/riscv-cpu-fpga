@@ -1,10 +1,44 @@
-open_project C:/Xilinx/Project/RISC-V/RISC-V.xpr
+set processor_root {C:/Users/harry/Desktop/Project/risc-v/RISC-V-Processor}
+set repository_root {C:/Users/harry/Desktop/Project/risc-v}
+set simulation_project ${processor_root}/.vivado_processor_sim
+
+if {[file exists ${simulation_project}]} {
+    file delete -force ${simulation_project}
+}
+
+create_project processor_axi4_sim ${simulation_project} \
+    -part xc7z010clg400-1 -force
+
+set processor_sources [list]
+foreach source_file [glob -nocomplain \
+    ${processor_root}/RTL/*.v ${processor_root}/RTL/*.sv] {
+    if {[file tail ${source_file}] ne {RISCV_PROCESSOR_tb.v}} {
+        lappend processor_sources ${source_file}
+    }
+}
+
+add_files -fileset sources_1 -norecurse ${processor_sources}
+add_files -fileset sources_1 -norecurse \
+    ${repository_root}/CACHE/I-CACHE/I_Cache.sv
+add_files -fileset sources_1 -norecurse \
+    ${repository_root}/CACHE/D-CACHE/D_Cache.sv
+add_files -fileset sources_1 -norecurse \
+    ${repository_root}/CACHE/AXI4/AXI4_Bus.sv
+
+add_files -fileset sim_1 -norecurse \
+    ${processor_root}/RTL/RISCV_PROCESSOR_tb.v
+add_files -fileset sim_1 -norecurse \
+    ${repository_root}/CACHE/AXI4/CHECKER.sv
+
+set_property include_dirs [list ${processor_root}/RTL] [get_filesets sources_1]
+set_property include_dirs [list ${processor_root}/RTL] [get_filesets sim_1]
+set_property top RISCV_PROCESSOR [get_filesets sources_1]
+set_property top RISCV_PROCESSOR_tb [get_filesets sim_1]
+
 update_compile_order -fileset sources_1
-set_property CONFIG.Coe_File {c:/Users/harry/Desktop/Project/RISCV/RISC-V-Processor/Testbench/IM.coe} [get_ips blk_mem_gen_0]
-generate_target all [get_files  C:/Xilinx/Project/RISC-V/RISC-V.srcs/sources_1/ip/blk_mem_gen_0/blk_mem_gen_0.xci]
-export_ip_user_files -of_objects [get_files C:/Xilinx/Project/RISC-V/RISC-V.srcs/sources_1/ip/blk_mem_gen_0/blk_mem_gen_0.xci] -no_script -sync -force -quiet
-export_simulation -lib_map_path [list {modelsim=C:/Xilinx/Project/RISC-V/RISC-V.cache/compile_simlib/modelsim} {questa=C:/Xilinx/Project/RISC-V/RISC-V.cache/compile_simlib/questa} {riviera=C:/Xilinx/Project/RISC-V/RISC-V.cache/compile_simlib/riviera} {activehdl=C:/Xilinx/Project/RISC-V/RISC-V.cache/compile_simlib/activehdl}] -of_objects [get_files C:/Xilinx/Project/RISC-V/RISC-V.srcs/sources_1/ip/blk_mem_gen_0/blk_mem_gen_0.xci] -directory C:/Xilinx/Project/RISC-V/RISC-V.ip_user_files/sim_scripts -ip_user_files_dir C:/Xilinx/Project/RISC-V/RISC-V.ip_user_files -ipstatic_source_dir C:/Xilinx/Project/RISC-V/RISC-V.ip_user_files/ipstatic -use_ip_compiled_libs -force -quiet
-launch_simulation
+update_compile_order -fileset sim_1
+launch_simulation -simset sim_1 -mode behavioral
 run all
 close_sim
 close_project
+exit

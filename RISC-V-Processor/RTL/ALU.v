@@ -15,24 +15,66 @@ module ALU(
 
     always @(*) begin
         case(ALU_Ctrl_op)
-            `ALU_CTRL_ADD   : ALU_Result = Src1 + Src2;
-            `ALU_CTRL_SUB   : ALU_Result = Src1 - Src2;
-            `ALU_CTRL_SLT   : ALU_Result = (Src1_Signed < Src2_Signed);
-            `ALU_CTRL_SLTU  : ALU_Result = (Src1 < Src2);
-            `ALU_CTRL_GE    : ALU_Result = (Src1_Signed >= Src2_Signed);
-            `ALU_CTRL_GEU   : ALU_Result = (Src1 >= Src2);
-            `ALU_CTRL_AND   : ALU_Result = Src1 & Src2;
-            `ALU_CTRL_OR    : ALU_Result = Src1 | Src2;
-            `ALU_CTRL_XOR   : ALU_Result = Src1 ^ Src2;
-            `ALU_CTRL_SLL   : ALU_Result = Src1 << Src2[4:0];
-            `ALU_CTRL_SRL   : ALU_Result = Src1 >> Src2[4:0];
-            `ALU_CTRL_SRA   : ALU_Result = Src1_Signed >>> Src2[4:0];
+            `ALU_CTRL_ADD   : begin
+                Mul_Result = 0;
+                ALU_Result = Src1 + Src2;
+            end
+            `ALU_CTRL_SUB   : begin
+                Mul_Result = 0;
+                ALU_Result = Src1 - Src2;
+            end
+            `ALU_CTRL_SLT   : begin
+                Mul_Result = 0;
+                ALU_Result = (Src1_Signed < Src2_Signed);
+            end
+            `ALU_CTRL_SLTU  : begin
+                Mul_Result = 0;
+                ALU_Result = (Src1 < Src2);
+            end
+            `ALU_CTRL_GE    : begin
+                Mul_Result = 0;
+                ALU_Result = (Src1_Signed >= Src2_Signed);
+            end
+            `ALU_CTRL_GEU   : begin
+                Mul_Result = 0;
+                ALU_Result = (Src1 >= Src2);
+            end
+            `ALU_CTRL_AND   : begin
+                Mul_Result = 0;
+                ALU_Result = Src1 & Src2;
+            end
+            `ALU_CTRL_OR    : begin
+                Mul_Result = 0;
+                ALU_Result = Src1 | Src2;
+            end
+            `ALU_CTRL_XOR   : begin
+                Mul_Result = 0;
+                ALU_Result = Src1 ^ Src2;
+            end
+            `ALU_CTRL_SLL   : begin
+                Mul_Result = 0;
+                ALU_Result = Src1 << Src2[4:0];
+            end
+            `ALU_CTRL_SRL   : begin
+                Mul_Result = 0;
+                ALU_Result = Src1 >> Src2[4:0];
+            end
+            `ALU_CTRL_SRA   : begin
+                Mul_Result = 0;
+                ALU_Result = Src1_Signed >>> Src2[4:0];
+            end
             `ALU_CTRL_MUL   : begin
                 Mul_Result = Src1_Signed * Src2_Signed;
                 ALU_Result = Mul_Result[31:0];
             end
-            `ALU_CTRL_DIV   : ALU_Result = Src1_Signed / Src2_Signed;
-            `ALU_CTRL_REM   : ALU_Result = Src1_Signed % Src2_Signed;
+            `ALU_CTRL_DIV   : begin 
+                Mul_Result = 0;
+                ALU_Result = Src1_Signed / Src2_Signed;
+            end
+            `ALU_CTRL_REM   : begin
+                Mul_Result = 0;
+                ALU_Result = Src1_Signed % Src2_Signed;
+            end
             `ALU_CTRL_MULH  : begin
                 Mul_Result = Src1_Signed * Src2_Signed;
                 ALU_Result = Mul_Result[63:32];                
@@ -46,8 +88,18 @@ module ALU(
                 Mul_Result = Src1 * Src2;
                 ALU_Result = Mul_Result[63:32];                  
             end
-            `ALU_CTRL_DIVU  : ALU_Result = Src1 / Src2;
-            `ALU_CTRL_REMU  : ALU_Result = Src1 % Src2;            
+            `ALU_CTRL_DIVU  : begin
+                Mul_Result = 0;
+                ALU_Result = Src1 / Src2;
+            end
+            `ALU_CTRL_REMU  : begin
+                Mul_Result = 0;
+                ALU_Result = Src1 % Src2;   
+            end
+            default         : begin
+                Mul_Result = 0;
+                ALU_Result = 0;         
+            end
         endcase
     end
 endmodule

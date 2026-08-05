@@ -47,6 +47,12 @@ def run_simulation(script_path, vivado_path):
     RF_OUT = os.path.join('Testbench', 'RF.out')
     DM_OUT = os.path.join('Testbench', 'DM.out')
 
+    # Remove stale outputs so an early simulation abort cannot be mistaken for
+    # a successful run of the current test case.
+    for output_path in [RF_OUT, DM_OUT]:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
     # Kill any stale xsim processes that may have simulate.log locked
     for proc in ['xsim.exe', 'xsimk.exe']:
         subprocess.run(['taskkill', '/F', '/IM', proc], capture_output=True)
@@ -99,6 +105,24 @@ def run_simulation(script_path, vivado_path):
             print(f"  {line}")
         return False
 
+    simulation_log = os.path.join(
+        '.vivado_processor_sim', 'processor_axi4_sim.sim',
+        'sim_1', 'behav', 'xsim', 'simulate.log'
+    )
+    if os.path.exists(simulation_log):
+        with open(simulation_log, 'r', encoding='utf-8', errors='ignore') as log_file:
+            simulation_output = log_file.read()
+
+        if 'Fatal: [ERROR]' in simulation_output:
+            print(f"{Colors.RED}AXI4 assertion or testbench fatal detected:{Colors.RESET}")
+            fatal_lines = [
+                line for line in simulation_output.splitlines()
+                if 'Fatal: [ERROR]' in line
+            ]
+            for line in fatal_lines[-10:]:
+                print(f"  {line}")
+            return False
+
     # Verify output files exist and are non-empty
     missing = []
     for path in [RF_OUT, DM_OUT]:
@@ -130,7 +154,7 @@ def check_testcase_exists(testcase_num):
     return os.path.exists(testcase_file)
 
 def convert_testcase(testcase_num):
-    """Convert test case to IM.dat and IM.coe using Instr_Transfer.py and dat2coe.py"""
+    """Convert a test case to byte, COE, and synthesizable word images."""
     print(f"{Colors.CYAN}[Step 1/4] Converting TestCase{testcase_num}.dat to IM.dat...{Colors.RESET}")
 
     testcase_file = f"Pattern/TestCase{testcase_num}.dat"
@@ -163,15 +187,15 @@ def convert_testcase(testcase_num):
             print(f"{Colors.RED}Error: IM.dat was not generated{Colors.RESET}")
             return False
 
-        # Convert IM.dat to IM.coe for Vivado BRAM initialization
-        print(f"\n{Colors.CYAN}[Step 2/4] Converting IM.dat to IM.coe...{Colors.RESET}")
+        # Convert IM.dat to Vivado COE and 32-bit readmemh images.
+        print(f"\n{Colors.CYAN}[Step 2/4] Converting IM.dat to IM.coe and IM.mem...{Colors.RESET}")
         try:
             import importlib.util
             spec = importlib.util.spec_from_file_location("dat2coe", "Testbench/dat2coe.py")
             dat2coe = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(dat2coe)
             dat2coe.dat_to_coe('Testbench/IM.dat', 'Testbench/IM.coe')
-            print(f"{Colors.GREEN}✓ Successfully converted to Testbench/IM.coe{Colors.RESET}")
+            print(f"{Colors.GREEN}✓ Successfully converted to Testbench/IM.coe and IM.mem{Colors.RESET}")
         except Exception as e:
             print(f"{Colors.RED}Error converting to .coe: {e}{Colors.RESET}")
             return False
@@ -547,7 +571,7 @@ def main():
 
         print(f"\n{Colors.GREEN}{Colors.BOLD}✓ Stage 1 completed successfully!{Colors.RESET}")
         print(f"{Colors.GREEN}  - IM.dat generated in Testbench/{Colors.RESET}")
-        print(f"{Colors.GREEN}  - IM.coe generated in Testbench/ (for Vivado BRAM initialization){Colors.RESET}")
+        print(f"{Colors.GREEN}  - IM.coe and IM.mem generated in Testbench/{Colors.RESET}")
         print(f"{Colors.GREEN}  - RF.golden and DM.golden generated in Testbench/{Colors.RESET}\n")
 
         # ==================== Stage 2: RTL Simulation ====================
@@ -569,7 +593,7 @@ def main():
 
             if not run_simulation(script_tcl, vivado_path):
                 print(f"\n{Colors.RED}RTL simulation failed. Cannot proceed to verification.{Colors.RESET}")
-                print(f"{Colors.YELLOW}If you have pre-existing RF.out/DM.out you want to verify, answer 'y' below.{Colors.RESET}")
+                sys.exit(1)
 
         print(f"\n{Colors.GREEN}{Colors.BOLD}✓ Stage 2 completed.{Colors.RESET}\n")
 

@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Vivado generated projects and logs
+.Xil/
+*.jou
+*.log
+*.str
+*.xpr
+*.runs/
+*.sim/
+*.cache/
+*.hw/
+*.ip_user_files/
+*.gen/
+*.srcs/
+*.data/
+.vivado_processor_sim/
+dfx_runtime.txt
+
+# Simulation waveforms and crash artifacts
+*.wdb
+*.vcd
+*.fst
+*.pb
+hs_err_pid*
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+

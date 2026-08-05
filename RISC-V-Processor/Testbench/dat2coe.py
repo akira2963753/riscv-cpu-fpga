@@ -1,7 +1,7 @@
 import sys
 import os
 
-def dat_to_coe(input_path, output_path, depth=1024):
+def dat_to_coe(input_path, output_path, depth=1024, mem_path=None):
     bytes_list = []
 
     with open(input_path, 'r', encoding='latin-1') as f:
@@ -27,6 +27,13 @@ def dat_to_coe(input_path, output_path, depth=1024):
     while len(words) < depth:
         words.append(0x00000013)  # NOP
 
+    if mem_path is None:
+        mem_path = os.path.splitext(output_path)[0] + '.mem'
+
+    with open(mem_path, 'w') as f:
+        for word in words:
+            f.write(f'{word:08X}\n')
+
     with open(output_path, 'w') as f:
         f.write('memory_initialization_radix=16;\n')
         f.write('memory_initialization_vector=\n')
@@ -38,6 +45,7 @@ def dat_to_coe(input_path, output_path, depth=1024):
 
     print(f'Done: {len(bytes_list)} bytes → {len(words)} words')
     print(f'Output: {output_path}')
+    print(f'Output: {mem_path}')
 
 if __name__ == '__main__':
     base = os.path.dirname(os.path.abspath(__file__))
