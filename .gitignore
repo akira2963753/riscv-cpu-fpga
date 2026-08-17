@@ -25,10 +25,10 @@ dfx_runtime.txt
 *.fst
 *.pb
 hs_err_pid*
+.verification/
 
 # Editors and operating systems
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
-

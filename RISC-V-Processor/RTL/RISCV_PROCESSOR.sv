@@ -65,11 +65,11 @@ module RISCV_PROCESSOR (
     logic I_R_VALID;
     logic I_R_READY;
 
-    logic I_SLAVE_EN;
-    logic [`DATA_W/8-1:0] I_SLAVE_WE;
-    logic [`BRAM_ADDR_W-1:0] I_SLAVE_ADDR;
-    logic [`DATA_W-1:0] I_SLAVE_DIN;
-    logic [`DATA_W-1:0] I_SLAVE_DOUT;
+    logic I_BRAM_EN;
+    logic [`DATA_W/8-1:0] I_BRAM_WE;
+    logic [`BRAM_ADDR_W-1:0] I_BRAM_ADDR;
+    logic [`DATA_W-1:0] I_BRAM_DIN;
+    logic [`DATA_W-1:0] I_BRAM_DOUT;
 
     //=============================================================
     // -------------------- Data AXI4 Signals ---------------------
@@ -113,20 +113,20 @@ module RISCV_PROCESSOR (
     logic D_R_VALID;
     logic D_R_READY;
 
-    logic D_SLAVE_EN;
-    logic [`DATA_W/8-1:0] D_SLAVE_WE;
-    logic [`DATA_BRAM_ADDR_W-1:0] D_SLAVE_ADDR;
-    logic [`DATA_W-1:0] D_SLAVE_DIN;
-    logic [`DATA_W-1:0] D_SLAVE_DOUT;
+    logic D_BRAM_EN;
+    logic [`DATA_W/8-1:0] D_BRAM_WE;
+    logic [`DATA_BRAM_ADDR_W-1:0] D_BRAM_ADDR;
+    logic [`DATA_W-1:0] D_BRAM_DIN;
+    logic [`DATA_W-1:0] D_BRAM_DOUT;
 
     //=============================================================
     // ------------------ Instruction Memory ---------------------
     //=============================================================
     I_BRAM Instruction_Mem (
         .clka(ACLK),
-        .ena(I_SLAVE_EN),
-        .addra(I_SLAVE_ADDR),
-        .douta(I_SLAVE_DOUT)
+        .ena(I_BRAM_EN),
+        .addra(I_BRAM_ADDR),
+        .douta(I_BRAM_DOUT)
     );
 
     //=============================================================
@@ -194,11 +194,11 @@ module RISCV_PROCESSOR (
         .R_LAST(I_R_LAST),
         .R_VALID(I_R_VALID),
         .R_READY(I_R_READY),
-        .SLAVE_EN(I_SLAVE_EN),
-        .SLAVE_WE(I_SLAVE_WE),
-        .SLAVE_ADDR(I_SLAVE_ADDR),
-        .SLAVE_DIN(I_SLAVE_DIN),
-        .SLAVE_DOUT(I_SLAVE_DOUT)
+        .BRAM_EN(I_BRAM_EN),
+        .BRAM_WE(I_BRAM_WE),
+        .BRAM_ADDR(I_BRAM_ADDR),
+        .BRAM_DIN(I_BRAM_DIN),
+        .BRAM_DOUT(I_BRAM_DOUT)
     );
 
     //=============================================================
@@ -313,11 +313,11 @@ module RISCV_PROCESSOR (
         .R_LAST(D_R_LAST),
         .R_VALID(D_R_VALID),
         .R_READY(D_R_READY),
-        .SLAVE_EN(D_SLAVE_EN),
-        .SLAVE_WE(D_SLAVE_WE),
-        .SLAVE_ADDR(D_SLAVE_ADDR),
-        .SLAVE_DIN(D_SLAVE_DIN),
-        .SLAVE_DOUT(D_SLAVE_DOUT)
+        .BRAM_EN(D_BRAM_EN),
+        .BRAM_WE(D_BRAM_WE),
+        .BRAM_ADDR(D_BRAM_ADDR),
+        .BRAM_DIN(D_BRAM_DIN),
+        .BRAM_DOUT(D_BRAM_DOUT)
     );
 
     //=============================================================
@@ -325,11 +325,11 @@ module RISCV_PROCESSOR (
     //=============================================================
     D_BRAM Data_Memory (
         .clka(ACLK),
-        .ena(D_SLAVE_EN),
-        .wea(D_SLAVE_WE),
-        .addra(D_SLAVE_ADDR),
-        .dina(D_SLAVE_DIN),
-        .douta(D_SLAVE_DOUT)
+        .ena(D_BRAM_EN),
+        .wea(D_BRAM_WE),
+        .addra(D_BRAM_ADDR),
+        .dina(D_BRAM_DIN),
+        .douta(D_BRAM_DOUT)
     );
 
 endmodule

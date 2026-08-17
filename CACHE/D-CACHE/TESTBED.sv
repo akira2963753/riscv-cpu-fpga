@@ -73,11 +73,11 @@ module TESTBED;
     logic R_VALID;
     logic R_READY;
 
-    logic SLAVE_EN;
-    logic [DATA_W/8-1:0] SLAVE_WE;
-    logic [BRAM_ADDR_W-1:0] SLAVE_ADDR;
-    logic [DATA_W-1:0] SLAVE_DIN;
-    logic [DATA_W-1:0] SLAVE_DOUT;
+    logic BRAM_EN;
+    logic [DATA_W/8-1:0] BRAM_WE;
+    logic [BRAM_ADDR_W-1:0] BRAM_ADDR;
+    logic [DATA_W-1:0] BRAM_DIN;
+    logic [DATA_W-1:0] BRAM_DOUT;
     logic [DATA_W-1:0] bram [0:BRAM_DEPTH-1];
 
     integer mem_idx;
@@ -89,16 +89,16 @@ module TESTBED;
     end
 
     always_ff @(posedge ACLK) begin
-        if(SLAVE_EN) begin
-            if(|SLAVE_WE) begin
+        if(BRAM_EN) begin
+            if(|BRAM_WE) begin
                 for(byte_idx = 0; byte_idx < DATA_W / 8;
                     byte_idx = byte_idx + 1) begin
-                    if(SLAVE_WE[byte_idx])
-                        bram[SLAVE_ADDR][byte_idx*8 +: 8] <=
-                            SLAVE_DIN[byte_idx*8 +: 8];
+                    if(BRAM_WE[byte_idx])
+                        bram[BRAM_ADDR][byte_idx*8 +: 8] <=
+                            BRAM_DIN[byte_idx*8 +: 8];
                 end
             end else begin
-                SLAVE_DOUT <= bram[SLAVE_ADDR];
+                BRAM_DOUT <= bram[BRAM_ADDR];
             end
         end
     end
@@ -206,11 +206,11 @@ module TESTBED;
         .R_LAST(R_LAST),
         .R_VALID(R_VALID),
         .R_READY(R_READY),
-        .SLAVE_EN(SLAVE_EN),
-        .SLAVE_WE(SLAVE_WE),
-        .SLAVE_ADDR(SLAVE_ADDR),
-        .SLAVE_DIN(SLAVE_DIN),
-        .SLAVE_DOUT(SLAVE_DOUT)
+        .BRAM_EN(BRAM_EN),
+        .BRAM_WE(BRAM_WE),
+        .BRAM_ADDR(BRAM_ADDR),
+        .BRAM_DIN(BRAM_DIN),
+        .BRAM_DOUT(BRAM_DOUT)
     );
 
     CHECKER #(
