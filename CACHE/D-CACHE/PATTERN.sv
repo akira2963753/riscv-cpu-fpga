@@ -15,6 +15,8 @@
 
 `timescale 1ns/1ps
 
+import AXI4_PKG::*;
+
 module PATTERN #(
     parameter int DATA_W = 32,
     parameter int ADDR_W = 32,
@@ -36,12 +38,12 @@ module PATTERN #(
     input logic W_READY,
     input logic B_VALID,
     input logic B_READY,
-    input logic [1:0] B_RESP,
+    input resp_type B_RESP,
     input logic AR_VALID,
     input logic AR_READY,
     input logic R_VALID,
     input logic R_READY,
-    input logic [1:0] R_RESP
+    input resp_type R_RESP
 );
 
     localparam int CYCLE = 10;
@@ -88,7 +90,7 @@ module PATTERN #(
             if(B_VALID && B_READY) begin
                 b_response_count <= b_response_count + 1;
 
-                if(B_RESP != 2'b00)
+                if(B_RESP != AXI_OKAY)
                     response_error_count <= response_error_count + 1;
             end
 
@@ -98,7 +100,7 @@ module PATTERN #(
             if(R_VALID && R_READY) begin
                 r_beat_count <= r_beat_count + 1;
 
-                if(R_RESP != 2'b00)
+                if(R_RESP != AXI_OKAY)
                     response_error_count <= response_error_count + 1;
             end
         end

@@ -376,7 +376,7 @@ module AXI4_Bus #(
                 read_pending_resp <= read_issue_resp;
                 read_pending_last <= (read_beat == read_len);
 
-                if(read_beat == read_len) begin
+                if(read_beat == read_len) begin // the last read data
                     read_active <= 1'b0;
                 end
                 else begin

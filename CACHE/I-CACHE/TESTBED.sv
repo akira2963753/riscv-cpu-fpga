@@ -15,6 +15,8 @@
 
 `timescale 1ns/1ps
 
+import AXI4_PKG::*;
+
 module TESTBED;
 
     localparam int DATA_W = 32;
@@ -54,7 +56,7 @@ module TESTBED;
     logic W_READY;
 
     logic [ID_W-1:0] B_ID;
-    logic [1:0] B_RESP;
+    resp_type B_RESP;
     logic B_VALID;
     logic B_READY;
 
@@ -72,7 +74,7 @@ module TESTBED;
 
     logic [ID_W-1:0] R_ID;
     logic [DATA_W-1:0] R_DATA;
-    logic [1:0] R_RESP;
+    resp_type R_RESP;
     logic R_LAST;
     logic R_VALID;
     logic R_READY;
@@ -111,7 +113,7 @@ module TESTBED;
         $readmemh(MEM_FILE, bram, 0, MEM_FILE_WORDS - 1);
     end
 
-    always_ff @(posedge ACLK) begin
+    always @(posedge ACLK) begin
         if(BRAM_EN) begin
             if(|BRAM_WE) begin
                 for(byte_idx = 0; byte_idx < DATA_W / 8;

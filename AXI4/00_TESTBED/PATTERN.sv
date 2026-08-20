@@ -13,7 +13,7 @@
 `define CLK_PERIOD 10.0
 `define TIMEOUT 20000000
 
-import AXI4_PKG::*;
+//import AXI4_PKG::*;
 
 module PATTERN #(
     parameter int DATA_W = 32,
@@ -662,4 +662,41 @@ module PATTERN #(
         #100 $finish;
     end
 
+    // ============================================================================ 
+    //                              SystemVerilog Assertion
+    // ============================================================================ 
+    // Property Name: assert property(condition) <pass event> else <fail event>
+
+    // 規定握手失敗後，並須要保持穩定，不能傳送下一筆資料
+    S_AW_STABLE: assert property(
+        @(posedge ACLK) disable iff(!ARESETn) 
+        AW_VALID && !AW_READY |=> $stable({AW_ID, AW_ADDR, AW_LEN, AW_SIZE, AW_BURST,
+        AW_LOCK, AW_CACHE, AW_PROT, AW_QOS}))
+    else $fatal(1, "[ERROR]: AW informations must be stable after AW_VALID high & AW_READY low.");
+
+    S_W_STABLE: assert property(
+        @(posedge ACLK) disable iff(!ARESETn)
+        W_VALID && !W_READY |=> $stable({W_DATA, W_STRB, W_LAST}))
+    else $fatal(1, "[ERROR]: W informations must be stable after W_VALID high & W_READY low.");
+    
+    S_P_STABLE: assert property(
+        @(posedge ACLK) disable iff(!ARESETn)
+        B_VALID && !B_READY |=> $stable({B_ID, B_RESP}))
+    else $fatal(1, "[ERROR]: B informations must be stable after B_VALID high & B_READY low.");
+
+    S_AR_STABLE: assert property(
+        @(posedge ACLK) disable iff(!ARESETn)
+        AR_VALID && !AR_READY |=> $stable({AR_ID, AR_ADDR, AR_LEN, AR_SIZE, AR_BURST,
+        AR_LOCK, AR_CACHE, AR_PROT, AR_QOS}))
+    else $fatal(1, "[ERROR]: AR informations must be stable after AR_VALID high and AR_READY low.");
+
+    S_R_STABLE: assert property(
+        @(posedge ACLK) disable iff(!ARESETn)
+        R_VALID && !R_READY |=> $stable({R_ID, R_DATA, R_RESP, R_LAST}))
+    else $fatal(1, "[ERROR]: R informations must be stable after R_READY high and R_VALID low.");
+
+    CHECK_RESET_VALID_LOW: assert property(
+        @(posedge ACLK) !ARESETn |-> (!AW_VALID && !W_VALID && !B_VALID && !AR_VALID && !R_VALID)) 
+    else $fatal(1, "[ERROR]: VALID signal asserted during reset");
+    
 endmodule

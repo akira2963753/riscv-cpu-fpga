@@ -15,6 +15,8 @@
 
 `timescale 1ns/1ps
 
+import AXI4_PKG::*;
+
 module I_Cache #(
     parameter int DATA_W = 32,
     parameter int ADDR_W = 32,
@@ -46,7 +48,7 @@ module I_Cache #(
 
     input logic [ID_W-1:0] R_ID,
     input logic [DATA_W-1:0] R_DATA,
-    input logic [1:0] R_RESP,
+    input resp_type R_RESP,
     input logic R_LAST,
     input logic R_VALID,
     output logic R_READY
@@ -61,7 +63,6 @@ module I_Cache #(
     localparam int REFILL_CNT_W = $clog2(BLOCK_WORD_SIZE);
     localparam int CACHE_WORDS = SET * BLOCK_WORD_SIZE;
     localparam int CACHE_WORD_ADDR_W = $clog2(CACHE_WORDS);
-    localparam logic [1:0] AXI_OKAY = 2'b00;
     localparam logic [1:0] AXI_BURST_INCR = 2'b01;
 
     typedef enum logic [2:0] {

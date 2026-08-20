@@ -12,7 +12,33 @@
 
 import AXI4_PKG::*;
 
-module TESTBED;
+module TESTBED();
+
+    //=============================================================
+    // ---------------- Sim Mode & SDF Annotate -------------------
+    //=============================================================
+    `ifdef GATE
+        initial begin
+            $display("======================================");
+            $display("  [INFO] GATE-LEVEL SIMULATION START  ");
+            $display("======================================");
+            $sdf_annotate("../02_SYN/Netlist/AXI4_Bus_syn.sdf", u_dut, , ,"maximum");
+        end
+    `else
+        initial begin
+            $display("======================================");
+            $display("  [INFO] BEHAVIORAL SIMULATION START  ");
+            $display("======================================");
+        end
+    `endif
+
+    //=============================================================
+    // ------------------------- FSDB Dump ------------------------
+    //=============================================================
+    initial begin
+        $fsdbDumpfile("TESTBED.fsdb");
+        $fsdbDumpvars(0, TESTBED, "+mda");
+    end
 
     parameter int DATA_W = 32;
     parameter int ADDR_W = 32;
@@ -182,57 +208,6 @@ module TESTBED;
         .BRAM_ADDR (BRAM_ADDR),
         .BRAM_DIN  (BRAM_DIN),
         .BRAM_DOUT (BRAM_DOUT)
-    );
-
- 
-    //=============================================================
-    // ------------------------- Checker --------------------------
-    //=============================================================
-    CHECKER #(
-        .DATA_W     (DATA_W),
-        .ADDR_W     (ADDR_W),
-        .ID_W       (ID_W),
-        .BRAM_DEPTH (BRAM_DEPTH)
-    ) u_checker (
-        .ACLK     (ACLK),
-        .ARESETn  (ARESETn),
-        .AW_ID    (AW_ID),
-        .AW_ADDR  (AW_ADDR),
-        .AW_LEN   (AW_LEN),
-        .AW_SIZE  (AW_SIZE),
-        .AW_BURST (AW_BURST),
-        .AW_LOCK  (AW_LOCK),
-        .AW_CACHE (AW_CACHE),
-        .AW_PROT  (AW_PROT),
-        .AW_QOS   (AW_QOS),
-        .AW_VALID (AW_VALID),
-        .AW_READY (AW_READY),
-        .W_DATA   (W_DATA),
-        .W_STRB   (W_STRB),
-        .W_LAST   (W_LAST),
-        .W_VALID  (W_VALID),
-        .W_READY  (W_READY),
-        .B_ID     (B_ID),
-        .B_RESP   (B_RESP),
-        .B_VALID  (B_VALID),
-        .B_READY  (B_READY),
-        .AR_ID    (AR_ID),
-        .AR_ADDR  (AR_ADDR),
-        .AR_LEN   (AR_LEN),
-        .AR_SIZE  (AR_SIZE),
-        .AR_BURST (AR_BURST),
-        .AR_LOCK  (AR_LOCK),
-        .AR_CACHE (AR_CACHE),
-        .AR_PROT  (AR_PROT),
-        .AR_QOS   (AR_QOS),
-        .AR_VALID (AR_VALID),
-        .AR_READY (AR_READY),
-        .R_ID     (R_ID),
-        .R_DATA   (R_DATA),
-        .R_RESP   (R_RESP),
-        .R_LAST   (R_LAST),
-        .R_VALID  (R_VALID),
-        .R_READY  (R_READY)
     );
 
     //=============================================================
